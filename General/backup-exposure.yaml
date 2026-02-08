@@ -1,0 +1,71 @@
+id: backup-and-config-exposure
+
+info:
+  name: Backup & Config File Exposure
+  author: omarpixel
+  severity: medium
+
+http:
+  - method: GET
+    redirects: true
+    max-redirects: 2
+    path:
+      - "{{BaseURL}}/{{sub}}.{{ext}}"
+      - "{{BaseURL}}/{{hostname}}.{{ext}}"
+      - "{{BaseURL}}/{{sub_dn}}{{ext}}"
+      - "{{BaseURL}}/{{dn}}{{ext}}"
+
+    payloads:
+      ext:
+        - "config.php.bak"
+        - ".zip"
+        - ".rar"
+        - ".tar.gz"
+        - ".7z"
+        - ".bz2"
+        - ".gz"
+        - ".sql"
+        - ".sql.gz"
+        - ".bak"
+        - ".bkp"
+        - ".dump"
+        - ".old"
+        - ".save"
+        - ".swp"
+        - ".temp"
+        - ".env"
+        - ".conf"
+        - ".backup"
+        - ".db"
+        - ".database"
+        - ".config"
+
+    variables:
+      sub: "{{regex_replace(hostname, '\\..*', '')}}"
+      sub_dn: "{{regex_replace(hostname, '\\.[a-zA-Z]{2,63}$', '')}}"
+      dn: "{{regex_replace(hostname, '^.*\\.(.*)\\..*$', '$1')}}"
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        words:
+          - "application/zip"
+          - "application/x-rar-compressed"
+          - "application/octet-stream"
+          - "text/plain"
+        part: header
+        condition: or
+
+      - type: word
+        negative: true
+        words:
+          - "text/html"
+        part: header
+
+      - type: size
+        size:
+          - ">100"
